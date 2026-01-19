@@ -88,11 +88,44 @@ def TrainModel(df):
     else:
         print("Status: Some overfitting detected")
     
+    # Feature importance
+    print("\nFeature Importance:")
+    for name, importance in zip(feature_cols, model.feature_importances_):
+        print(f"  {name}: {importance:.4f}")
+    
     return model
+
+def Predict(model, rank1, rank2, surface, court):
+    rank_diff = rank1 - rank2
+    
+    # Encode surface and court (matching training encoding)
+    surface_map = {'Hard': 1, 'Clay': 0, 'Grass': 2, 'Carpet': 3}
+    court_map = {'Indoor': 0, 'Outdoor': 1}
+    
+    surface_encoded = surface_map.get(surface, 1)
+    court_encoded = court_map.get(court, 1)
+    
+    features = np.array([[rank1, rank2, rank_diff, surface_encoded, court_encoded]])
+    prediction = model.predict(features)[0]
+    probability = model.predict_proba(features)[0]
+    
+    winner = "Player 1" if prediction == 1 else "Player 2"
+    confidence = max(probability) * 100
+    
+    print("\nMATCH PREDICTION:")
+    print(f"Player 1 Rank: {rank1}")
+    print(f"Player 2 Rank: {rank2}")
+    print(f"Surface: {surface}")
+    print(f"Court: {court}")
+    print(f"\nPredicted Winner: {winner}")
+    print(f"Confidence: {confidence:.1f}%")
 
 if __name__ == "__main__":
     df = LoadData('atp_tennis.csv')
     df = CreateFeatures(df)
     CalculateStats(df)
     model = TrainModel(df)
-    print("\nModel trained successfully!")
+    
+    # Example prediction
+    print("\nEXAMPLE PREDICTION:")
+    Predict(model, rank1=10, rank2=50, surface='Hard', court='Outdoor')
